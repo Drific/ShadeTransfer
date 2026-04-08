@@ -1,45 +1,63 @@
 # ShadeTransfer
 
-P2P File Transfer Application built with Flutter.
+使用Flutter构建的P2P传输应用程序。
+先后使用`mimo-v2-pro`和`grok-code-fast-1`编写
 
-## Features
+## 功能
 
-- **End-to-end encryption** - AES-256 + RSA encryption protects your data
-- **Peer-to-peer transfer** - Direct connection, no intermediate server required
-- **QR code signaling** - Exchange connection info via QR code or text
-- **Image QR scanning** - Scan QR codes from image files
-- **Resumable transfers** - Pause and resume file transfers
-- **Cross-platform** - Supports Windows, Android, Linux, iOS, macOS
+- **端到端加密（待验证）** - AES-256 + RSA 加密保护您的数据
+- **信令设计** - 通过二维码或文本建立连接（二维码暂不可用）
+- **点对点传输** - 直接连接，无需中间服务器
+- **可恢复传输（待验证）** - 允许暂停或恢复文件传输
+- **跨平台** - 适配 Windows、Android。
 
-## How It Works
+## 如何工作
 
-1. **Sender**: Select file -> Generate QR code -> Scan receiver's answer QR -> Transfer begins
-2. **Receiver**: Scan sender's QR code -> Generate response QR -> Wait for connection -> Receive file
+1. **发送方**: 选择文件/文件夹 -> 生成信令 -> 等待接收方输入信令 -> 等待连接 -> 传输开始
+2. **接收方**: 输入来自发送方的信令 -> 开始 -> 等待连接 -> 传输开始
 
-## Build
+## 获取安装包
+### 1. 直接下载
+#### 正式版
+您可以从[Github Release](https://github.com/Drific/ShadeTransfer/release)下载
+#### 调试/测试版
+您可以从[Github Actions](https://github.com/Drific/ShadeTransfer/actions)下载
 
-### Windows
+### 2. 从源码构建
+需要提前准备好环境：
+>Flutter SDK、Dart SDK、Android SDK等。
+#### Windows
+打包exe：
 ```bash
 flutter build windows
 ```
+>你将得到exe文件及dll文件等依赖，无需安装，双击exe文件即可启动
 
-### Windows MSIX
+打包msix:
 ```bash
 flutter pub run msix:create
 ```
-
-### Android
+>你将得到msix文件，可一键安装或卸载
+#### Android
+全架构打包：
 ```bash
-flutter build apk
+flutter build apk --release
 ```
+>你将得到app-release.apk，体积通常较大，但所有架构的设备均可安装（仅限arm64、arm32、x86_64）
 
-## Dependencies
+分架构打包：
+```bash
+flutter build apk --release --split-per-abi
+```
+>你将得到app-arm64-v8a-release.apk、app-armeabi-v7a-release.apk、app-x86_64-release.apk这三个文件，单个体积通常较小，但一个包只适配一个架构，你可以选择自己的设备对应的架构进行安装。
 
-- `flutter_webrtc` - WebRTC P2P connection
-- `qr_flutter` - QR code generation
-- `mobile_scanner` - QR code scanning (camera + image)
-- `image_picker` - Image selection for QR scanning
-- `file_picker` - File selection
-- `encrypt` / `pointycastle` - Encryption
-- `provider` - State management
-- `msix` - Windows MSIX packaging
+## 用到的依赖
+
+- `flutter_webrtc` - WebRTC P2P 连接
+- `qr_flutter` - 二维码生成
+- `mobile_scanner` - 二维码扫描 (摄像机 + 图像)
+- `image_picker` - 图像文件选择器（为二维码图片扫描）
+- `file_picker` - 文件选择
+- `encrypt` / `pointycastle` - 加密
+- `provider` - 状态管理
+- `msix` - 为 Windows 打包 MSIX 安装包

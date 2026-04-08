@@ -6,18 +6,18 @@
     "configurations": [
     
         {
-            "name": "flutter_application_1",
+            "name": "shade_transfer",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "flutter_application_1 (profile mode)",
+            "name": "shade_transfer (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "flutter_application_1 (release mode)",
+            "name": "shade_transfer (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
