@@ -29,7 +29,7 @@
 ## 获取安装包
 ### 1. 直接下载
 #### 正式版（暂时还没有）
-您可以从[Github Release](https://github.com/Drific/ShadeTransfer/release)下载
+您可以从[Github Release](https://github.com/Drific/ShadeTransfer/releases)下载
 #### 调试/测试版（暂时还没有）
 您可以从[Github Actions](https://github.com/Drific/ShadeTransfer/actions)下载
 
