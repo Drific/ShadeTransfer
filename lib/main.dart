@@ -1,48 +1,47 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:provider/provider.dart';
+import 'constants/charset.dart';
+import 'services/encoding_service.dart';
 
-import 'screens/home_page.dart';
-import 'services/app_state_provider.dart';
-import 'services/logger_service.dart';
-import 'utils/app_theme.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  final logger = AppLogger();
-  await logger.init();
-
-  // Initialize notifications
-  const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-  const DarwinInitializationSettings initializationSettingsDarwin =
-      DarwinInitializationSettings();
-  const InitializationSettings initializationSettings = InitializationSettings(
-    android: initializationSettingsAndroid,
-    iOS: initializationSettingsDarwin,
-  );
-  await FlutterLocalNotificationsPlugin().initialize(
-    initializationSettings,
-    onDidReceiveNotificationResponse: (NotificationResponse response) {
-      // Handle notification tap
-      // Navigate to transfer page
-    },
-  );
-
-  // Create notification channel
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'transfer_channel',
-    'Transfer Notifications',
-    description: 'Notifications for file transfer progress',
-    importance: Importance.low,
-    showBadge: false,
-  );
-  await FlutterLocalNotificationsPlugin()
-      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
-
-  logger.info('App', 'ShadeTransfer started');
+void main() {
+  // Quick self-test
+  _selfTest();
   runApp(const ShadeTransferApp());
+}
+
+void _selfTest() {
+  // Round-trip test: random bytes → encode → decode
+  for (int i = 0; i < 100; i++) {
+    final original = EncodingService.randomString(8);
+    final decoded = EncodingService.decodeBigInt(original);
+    final reencoded = EncodingService.encodeBigInt(decoded);
+    assert(original == reencoded, 'Round-trip failed at $i');
+  }
+
+  // ICE candidate test
+  final ice = EncodingService.encodeIceCandidate('192.168.1.100', 8080);
+  final result = EncodingService.decodeIceCandidate(ice);
+  assert(result.ip == '192.168.1.100');
+  assert(result.port == 8080);
+
+  // Checksum test
+  final data = 'hello world';
+  final cs = EncodingService.checksum(data);
+  assert(EncodingService.verifyChecksum(data, cs));
+  assert(!EncodingService.verifyChecksum('hello worle', cs));
+
+  // Charset validation
+  assert(!ice.contains('o'));
+  assert(!ice.contains('O'));
+  assert(!ice.contains('0'));
+  assert(!ice.contains('1'));
+  assert(!ice.contains('I'));
+  assert(!ice.contains('l'));
+
+  print('All tests passed.');
+  print('Charset (${Charset.base} chars): ${Charset.all}');
+  print('ICE example: $ice → ${result.ip}:${result.port}');
 }
 
 class ShadeTransferApp extends StatelessWidget {
@@ -50,13 +49,38 @@ class ShadeTransferApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AppStateProvider(),
-      child: MaterialApp(
-        title: 'ShadeTransfer',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
-        home: const HomePage(),
+    return MaterialApp(
+      title: 'ShadeTransfer',
+      debugShowCheckedModeBanner: false,
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'ShadeTransfer',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'v0.0.0.1',
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 48),
+            // Placeholder — real UI comes with shadcn_ui integration
+            const Text('Ready.'),
+          ],
+        ),
       ),
     );
   }
