@@ -1,0 +1,230 @@
+name: Build All Platforms
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 同一分支新提交自动取消旧的运行(citation:2)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.24.0'
+
+jobs:
+
+  # ─────────────────────────────────────
+  # 前置：代码检查 + 单元测试(citation:1)(citation:6)
+  # ─────────────────────────────────────
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format check
+        run: dart format --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      - name: Test
+        run: flutter test
+
+  # ─────────────────────────────────────
+  # Android APK(citation:1)(citation:2)
+  # ─────────────────────────────────────
+  build-android:
+    needs: analyze-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShadeTransfer-Android
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  # ─────────────────────────────────────
+  # iOS(citation:1)(citation:5)
+  # 必须在 macOS 运行器上编译
+  # ─────────────────────────────────────
+  build-ios:
+    needs: analyze-and-test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+        continue-on-error: true
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Package .app
+        run: |
+          mkdir -p ios-output
+          cp -r build/ios/iphoneos/Runner.app ios-output/ShadeTransfer.app
+          cd ios-output
+          zip -r ShadeTransfer-iOS.zip ShadeTransfer.app
+
+      - name: Upload iOS
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShadeTransfer-iOS
+          path: ios-output/ShadeTransfer-iOS.zip
+
+  # ─────────────────────────────────────
+  # Linux(citation:1)(citation:4)
+  # ─────────────────────────────────────
+  build-linux:
+    needs: analyze-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            liblzma-dev \
+            libstdc++-12-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Linux
+        run: flutter build linux --release
+
+      - name: Package
+        run: |
+          cd build/linux/x64/release/bundle
+          tar czf ../../../../../ShadeTransfer-Linux.tar.gz .
+
+      - name: Upload Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShadeTransfer-Linux
+          path: ShadeTransfer-Linux.tar.gz
+
+  # ─────────────────────────────────────
+  # Windows EXE(citation:1)(citation:2)
+  # ─────────────────────────────────────
+  build-windows-exe:
+    needs: analyze-and-test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Windows EXE
+        run: flutter build windows --release
+
+      - name: Package EXE
+        shell: pwsh
+        run: |
+          Compress-Archive `
+            -Path "build\windows\x64\runner\Release\*" `
+            -DestinationPath "ShadeTransfer-Windows-EXE.zip"
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShadeTransfer-Windows-EXE
+          path: ShadeTransfer-Windows-EXE.zip
+
+  # ─────────────────────────────────────
+  # Windows MSIX(citation:1)
+  # ─────────────────────────────────────
+  build-windows-msix:
+    needs: analyze-and-test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install msix packaging tool
+        run: dart pub global activate msix
+
+      - name: Build MSIX
+        run: dart run msix:create
+
+      - name: Upload MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShadeTransfer-Windows-MSIX
+          path: build/windows/x64/runner/Release/*.msix
