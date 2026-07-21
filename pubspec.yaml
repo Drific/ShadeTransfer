@@ -35,8 +35,8 @@ flutter:
 
 
 msix_config:
-  display_name: ShadeTransfer
-    publisher_display_name: ShadeTransfer
+  display_name: "ShadeTransfer"
+    publisher_display_name: "ShadeTransfer"
       identity_name: com.shade.transfer
         msix_version: 0.0.0.1
           logo_path: windows/runner/resources/app_icon.ico
