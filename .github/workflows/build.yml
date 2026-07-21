@@ -35,7 +35,7 @@ jobs:
         run: flutter pub get
       
       - name: Auto format
-        run:dart format .
+        run: dart format .
 
       - name: Format check
         run: dart format --set-exit-if-changed .
