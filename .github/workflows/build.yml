@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FLUTTER_VERSION: '3.27.0'
+  FLUTTER_VERSION: '3.41.6'
 
 jobs:
 
@@ -33,6 +33,9 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+      
+      - name: Auto format
+        run:dart format .
 
       - name: Format check
         run: dart format --set-exit-if-changed .
