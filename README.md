@@ -1,3 +1,4 @@
+>README待更新
 # ShadeTransfer
 
 >这是一个 Vibe Coding 产物，看起来好像很失败😰，虽然能正常编译打包，但核心功能貌似是不可用的状态
