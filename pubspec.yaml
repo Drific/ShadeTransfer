@@ -11,27 +11,27 @@ dependencies:
   flutter:
     sdk: flutter
   shadcn_ui: ^0.55.0
-  flutter_webrtc: ^0.12.9
-  nfc_manager: ^3.5.0
-  file_picker: ^8.1.7
+  flutter_webrtc: ^0.12.12
+  nfc_manager: ^3.5.1
+  file_picker: ^8.3.7
   pointycastle: ^3.9.1
   crypto: ^3.0.6
   shared_preferences: ^2.3.4
   flutter_secure_storage: ^9.2.4
   qr_flutter: ^4.1.0
   path_provider: ^2.1.5
-  permission_handler: ^11.3.1
+  permission_handler: ^11.4.0
   convert: ^3.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  msix: ^3.16.8
 
 flutter:
   uses-material-design: true
 
-# ↓ 必须在最外层，不能放在 flutter: 里面
 msix_config:
   display_name: ShadeTransfer
   publisher_display_name: ShadeTransfer
@@ -39,4 +39,3 @@ msix_config:
   msix_version: 0.0.0.1
   logo_path: windows/runner/resources/app_icon.ico
   capabilities: internetClient
-  
