@@ -10,8 +10,8 @@ class EncodingService {
 
   // ─── Base-55 encode / decode ────────────────────────────
 
-  static String encodeBigInt(BigInt number) {
-    if (number == BigInt.zero) {
+  static String encodeBigInt(BigInt number, {int minLength = 0}) {
+    if (number == BigInt.zero && minLength <= 0) {
       return Charset.charAt(0);
     }
 
@@ -22,7 +22,17 @@ class EncodingService {
       n ~/= BigInt.from(Charset.base);
     }
 
-    return buf.toString().split('').reversed.join();
+    String result = buf.toString().split('').reversed.join();
+
+    while (result.length < minLength) {
+      result = Charset.charAt(0) + result;
+    }
+
+    if (result.isEmpty) {
+      result = Charset.charAt(0);
+    }
+
+    return result;
   }
 
   static BigInt decodeBigInt(String encoded) {
@@ -90,14 +100,13 @@ class EncodingService {
       );
     }
 
-    final a = int.parse(parts[2]); // 0-255
-    final b = int.parse(parts[3]); // 0-255
-    final portOffset = port - Config.portRangeMin; // 0-150
+    final a = int.parse(parts[2]);
+    final b = int.parse(parts[3]);
+    final portOffset = port - Config.portRangeMin;
 
-    // a(8 bits) + b(8 bits) + portOffset(8 bits) = 24 bits
     final value = (a << 16) | (b << 8) | portOffset;
 
-    return encodeBigInt(BigInt.from(value)).padLeft(5, Charset.charAt(0));
+    return encodeBigInt(BigInt.from(value), minLength: 5);
   }
 
   static ({String ip, int port}) decodeIceCandidate(String encoded) {
@@ -118,8 +127,7 @@ class EncodingService {
       hash ^= data.codeUnitAt(i) << ((i % 4) * 8);
       hash = hash & 0xFFFFFFFF;
     }
-    return encodeBigInt(BigInt.from(hash))
-        .padLeft(Config.checksumLength, Charset.charAt(0))
+    return encodeBigInt(BigInt.from(hash), minLength: Config.checksumLength)
         .substring(0, Config.checksumLength);
   }
 
