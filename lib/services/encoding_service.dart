@@ -1,7 +1,11 @@
 // lib/services/encoding_service.dart
 
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
+
+import 'package:crypto/crypto.dart' as crypto;
+
 import '../constants/charset.dart';
 import '../constants/config.dart';
 
@@ -77,6 +81,28 @@ class EncodingService {
     return bigIntToBytes(decodeBigInt(encoded), byteLength);
   }
 
+  static int charsForBytes(int byteCount) {
+    if (byteCount <= 0) return 1;
+    final bitsPerChar = log(Charset.base) / ln2;
+    return ((byteCount * 8) / bitsPerChar).ceil();
+  }
+
+  static String encodeBytesFixed(List<int> bytes) {
+    return encodeBigInt(bytesToBigInt(bytes),
+        minLength: charsForBytes(bytes.length));
+  }
+
+  static List<int> decodeBytesFixed(String encoded, int byteCount) {
+    final expected = charsForBytes(byteCount);
+    if (encoded.length != expected) {
+      throw FormatException(
+        'Expected $expected characters for $byteCount bytes, '
+        'got ${encoded.length}',
+      );
+    }
+    return bigIntToBytes(decodeBigInt(encoded), byteCount);
+  }
+
   // ─── Random string (from charset) ───────────────────────
 
   static String randomString(int length) {
@@ -93,6 +119,15 @@ class EncodingService {
     final parts = ip.split('.');
     if (parts.length != 4) {
       throw FormatException('Expected IPv4, got: $ip');
+    }
+    if (parts[0] != '192' || parts[1] != '168') {
+      throw ArgumentError('Only 192.168.x.y addresses are supported: $ip');
+    }
+    for (final part in parts) {
+      final octet = int.tryParse(part);
+      if (octet == null || octet < 0 || octet > 255) {
+        throw FormatException('Invalid octet "$part" in IP: $ip');
+      }
     }
     if (port < Config.portRangeMin || port > Config.portRangeMax) {
       throw RangeError(
@@ -122,13 +157,11 @@ class EncodingService {
   // ─── Checksum ───────────────────────────────────────────
 
   static String checksum(String data) {
-    int hash = 0;
-    for (int i = 0; i < data.length; i++) {
-      hash ^= data.codeUnitAt(i) << ((i % 4) * 8);
-      hash = hash & 0xFFFFFFFF;
-    }
-    return encodeBigInt(BigInt.from(hash), minLength: Config.checksumLength)
-        .substring(0, Config.checksumLength);
+    final digest = crypto.sha256.convert(utf8.encode(data)).bytes;
+    final maxValue =
+        BigInt.from(Charset.base).pow(Config.checksumLength);
+    final value = bytesToBigInt(digest.sublist(0, 8)) % maxValue;
+    return encodeBigInt(value, minLength: Config.checksumLength);
   }
 
   static bool verifyChecksum(String data, String expected) {
